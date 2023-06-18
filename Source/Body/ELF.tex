@@ -1,0 +1,35 @@
+\section{ELF文件的一些总结}
+  \begin{quote}
+    ELF主体结构为:文件头、程序头表、正文（包括重定位符号等）、区块表\cite{Yale}
+  \end{quote}
+  %\begin{figure}[ht]
+  %  \centering
+  %  \includegraphics[scale=0.6]{xiantu.pdf}
+  %  \caption{ELF文件格式如图}
+  %  \label{fig:xiantu}
+  %\end{figure}
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{c|c|c}
+    \hline
+    Raw View & Linking View & Execution View \\
+    \hline
+    ELF header & ELF header & ELF header \\
+    Program header table  &Program header table & Program header table \\
+    - &optinal &  -\\
+    data1  & Section 1 & \\
+    ...  &...&Segment 1\\
+     & Section n & \\
+    data n  &...&Segment 2\\
+    ...&...&...\\
+    Section header table  &Section header table & Section header table \\
+    -  &  - & optinal \\
+    \hline
+  \end{tabular}
+\end{table}
+\subsection{一些问题}
+  \begin{itemize}
+    \item 关于vmlinux.o符号表段中大段空白段数据，是预留给重定位地址的，
+    因而可以在vmlinux文件中相同位置查看到有Value但是size为0的数据，即为重组vmlinx文件时用到的section地址 
+  \end{itemize}
+  

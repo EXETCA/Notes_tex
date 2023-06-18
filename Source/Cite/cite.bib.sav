@@ -1,0 +1,16 @@
+@Book{,
+  author    = {Steve ChamberlainIan and Lance Taylor},
+  editor    = {Jeffrey Osier},
+  publisher = {Free Software Foundation},
+  title     = {The GNU linker},
+  file      = {:file/ld.pdf:PDF},
+  url       = {https://www.gnu.org/software/binutils/},
+}
+
+@Article{,
+  title = {Executable and Linkable Format (ELF)},
+  file  = {:file/ELF_Format.pdf:PDF},
+  url   = {https://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}

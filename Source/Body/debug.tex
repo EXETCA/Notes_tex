@@ -1,0 +1,16 @@
+\section{Debug linux 内核的总结}
+  \subsection{QEMU脚本}
+  \begin{lstlisting}
+    qemu-system-x86_64 -kernel ./linux/arch/x86_64/boot/bzImage -initrd \
+                ../Download/busybox-1.36.1/_install/rootfs.img \
+                -append "nokaslr console=ttyS0" -s -S -nographic
+  \end{lstlisting}
+ 
+  \subsection{一些问题}
+    \begin{itemize}
+      \item 关于为什么在QEMU中进行debug无法在start\_kernel函数之前打断点？
+      这里做如下解释：当镜像文件为zbImage时，镜像文件为压缩文件，QEMU在没有解压之前无法识别
+      正确的函数符号与名称，因此无法打断点
+      \item  若需要直接debug vmlinux 文件，必须在内核编译配置时增加PVH，
+      并且开启后在debug中会直接跳转的0x7c00的代码段中，由于没有引导程序，在0x7c00出死循环
+    \end{itemize}
