@@ -1,0 +1,12 @@
+\section{操作系统实验}
+  \subsection{打印进程}
+  \subsection{关于git远程分支和本地分支}
+  \begin{itemize}
+    \item 本地仓库中可以包含远程仓库的分支（通过pull or fetch 命令），本地仓库根据这个分支来跟踪远程仓库的分支
+    进而同步远程仓库的数据改变，注意我们并不能直接修改本地的远程分支因而在本地修改代码或者说工作过程中会产生一个与远程分支同名
+    没有带origin的分支用于工作，当远程仓库更新后，本地fetch之后，本地的origin/workbranch分支更新了，但是实际工作的workbranch
+    没有更新，这样本地就有更新后的origin/workbranch 和没更新却修改的workbranch,这个时候就需要merge或则rebase修改本地workbranch
+    确保，确保工作区的workbranch与远端一致或者说加入远端的元素，而pull命令则是更新origin/workbranch后自动更新（合并）本地workbranch
+    若本地没有提交还会造成冲突。（origin/workbranch 并没有实体，而是一种远端在本地的映射）
+    \item 
+  \end{itemize}

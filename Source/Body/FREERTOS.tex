@@ -1,0 +1,29 @@
+\section{移植FREERTOS的一些问题}
+  \subsection{Segger}
+    \begin{itemize}
+      \item 打FreeRTOS补丁的格式注意2为忽略路径的层数、可以在git bash中运行
+      \begin{lstlisting}
+        Patch -p2 < *.patch
+      \end{lstlisting}
+      \item 使用Systemview时需要注意：SEGGER\_SYSVIEW\_Start()需要引用ul开头的一个变量来核对中断优先分组，
+      但这个变量的赋值要在内核开始调度后重新计算赋值，因此要么把这个函数放在设置中
+      断组之前要么在内核开始后执行
+      \begin{enumerate}
+        \item 在main.c 中添加头文件\#include "SEGGER\_SYSVIEW.h"；
+        \item 在main函数开始处添加：SEGGER\_SYSVIEW\_Conf()，初始化SystemView；
+        \item 在FreeRTOS.h中添加头文件\#include "SEGGER\_SYSVIEW\_FreeRTOS.h"；
+        \item 在 FreeRTOSConfig.h  中添加两个宏定义：\\
+        \#define INCLUDE\_xTaskGetIdleTaskHandle 1 \\
+        \#define INCLUDE\_pxTaskGetStackStart    1 \\
+      \end{enumerate}
+      \item 剩下就是根据配置，增加一些相关的hook函数，根据编译报错
+      \item 使用SEGGER\_SYSVIEW\_FreeRTOS.h时要有追踪宏定义的函数重定义问题，只需删去task文件中
+     的宏定义参数或者修改SEGGER\_SYSVIEW\_FreeRTOS.h，在宏函数中添加一个参数即可
+    \end{itemize}
+  \subsection{关于FREERTOS中断等级的问题}
+  \subsection{Keil的相关问题}
+   主要是C库和printf重定向的问题，当文件使用库或者micro库时，
+   再前添加SEGGER\_KEIL.C文件时会出现SYS\_IO.o 
+   文件重定义的问题，这时候要么选择删去该文件（这样printf不能被重定向，只能使用RTT\_prrntf）
+   要么取消micro并且重定向C库中的IO，重定向的方法是增加retarget\_io.c文件，可以在keil的包管理文件中，
+    Compiler->I/O->STDOUT选择USR。这样工程文件中会自动出现retarget\_io.c文。

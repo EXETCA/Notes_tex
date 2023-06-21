@@ -30,6 +30,22 @@
 \subsection{一些问题}
   \begin{itemize}
     \item 关于vmlinux.o符号表段中大段空白段数据，是预留给重定位地址的，
-    因而可以在vmlinux文件中相同位置查看到有Value但是size为0的数据，即为重组vmlinx文件时用到的section地址 
+    因而可以在vmlinux文件中相同位置查看到有Value但是size为0的数据，即为重组vmlinx文件时用到的section地址
+    \item 非操作系统镜像程序中可能会存在段映射表，即指明了那些section组成的哪一段，例如下面这段信息
+    \begin{lstlisting}
+      Segment Sections...
+      00
+      01     .interp
+      02     .interp .note.gnu.build-id .note.ABI-tag .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rela.dyn .rela.plt
+      03     .init .plt .text .fini
+      04     .rodata .eh_frame_hdr .eh_frame
+      05     .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss
+      06     .dynamic
+      07     .note.gnu.build-id .note.ABI-tag
+      08     .eh_frame_hdr
+      09
+      10     .init_array .fini_array .jcr .dynamic .got
+    \end{lstlisting} 
+    大部分数据都是有编译器增加的程序运行时需要操作系统进行配置初始化的代码
   \end{itemize}
   
