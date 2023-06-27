@@ -5,7 +5,11 @@
                 ../Download/busybox-1.36.1/_install/rootfs.img \
                 -append "nokaslr console=ttyS0" -s -S -nographic
   \end{lstlisting}
- 
+ \begin{figure}[htbp]
+  \begin{center}
+  \includegraphics[width=0.95\textwidth]{Pictures/vmlinux_arch.pdf}
+\end{center}
+ \end{figure}
   \subsection{一些问题}
     \begin{itemize}
       \item 关于为什么在QEMU中进行debug无法在start\_kernel函数之前打断点？

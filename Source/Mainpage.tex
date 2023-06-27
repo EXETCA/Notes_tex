@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt,onecolumn,twoside]{ctexart}
+\documentclass[UTF8,a4paper,11pt,onecolumn,twoside]{ctexart}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  页面设置。
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -16,13 +16,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  文章设置
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\includeonly{Body/ELF,Body/debug,Body/FREERTOS}
+\includeonly{Body/ELF,Body/debug,Body/FREERTOS,Body/LinuxKernel}
 \bibliographystyle{plain}  %引用风格设置
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  包管理
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
 \lstset{
     breaklines,                                 % 自动换行
     basicstyle          =   \sffamily,          % 基本代码风格
@@ -58,5 +61,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \include{Body/debug}
 \include{Body/FREERTOS}
+\include{Body/LinuxKernel}
 \bibliography{cite/cite.bib}
 \end{document}
