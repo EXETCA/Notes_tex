@@ -9,7 +9,107 @@
       		\item[] 设置内存域（物理内存）从BIOS中获取并设置全局变量，并映射代码段、数据段，也就是要读取镜像中的符号表。
       		\item[] 解析内核启动前的命令行输入，即启动内核配置。
       		\item[] 初始化多核结构体。
-      		\item[]	 初始化虚拟地址映射，设置可分配的虚拟内存的初值。
-      		
+      		\item[]	初始化虚拟地址映射，设置可分配的虚拟内存的初值。
+      		\item[] 初始化Trap、内存
+      		\item[] 初始化调度
       	\end{enumerate}
+      	\item 内核初始化的注册机制\\
+      	内核初始化后start\_kernel调用parse\_early\_param调用parse\_early\_options调用parse\_args。
+      	其中parse\_early\_options会获取boot\_comandline中的指令，去遍历.init.setup中的struct obs\_kernel\_param变量，找到合适的函数并执行。而宏定义\_\_setup\_param 就是将函数注册到该段(.init.setup)中的宏定义、并且还有其封装,宏定义early\_param(str, fn)和 \_\_setup(str, fn)。	
     \end{itemize}
+    \subsection{内存分配}
+    	\begin{itemize}
+    		\item 物理的地址的分配 \\
+    			\begin{enumerate}
+    				\item UMA 多核单独访问任意一块内存，延迟相同的系统。NUMA 延迟不同的系统。
+    				\item 物理地址分为三块：ZONE\_DMA、ZONE\_NORMAL、ZONE\_HIGHMEN。其中DMA区域，物理地址的0-16MB。NORMAL区域16M-896M，用于内核。HIGHMEN区域，用于临时或者永久映射，通过映射所有程序都可使用。
+    			\end{enumerate}
+    		\item 虚拟地址的分配
+    			\begin{enumerate}
+					\item 内核空间（32位系统）地址位0XC0000000-0XFFFFFFFF,内核在虚拟地址的最上端共1G。通过MMU使得内核空间分为两部分，其中0XC0000000-0XF8000000映射到物理地址的0M-896M,剩余的映射到上文所说的HIGHMEN区域。
+					\item 剩余的128M，又分为动态映射区、永久映射区和固定映射区。其中固定映射区4M一般在内存（虚拟地址）末尾4K+4M的地方。虚拟内存分配函数(系统调用)\emph{vmalloc}，用于申请一个\textbf{vm\_area\_struct}，在使用这个内存时，引发缺页而产生实际的物理地址分配。
+					
+				\end{enumerate}   
+			\item 用户空间\\
+				由于32位机只能寻址32位最大4G的线性地址空间，内核用掉1G，那么剩下3G则是用户空间。 	
+			\item 进程空间\\
+				在进程中，进程数据被分为5个段，分别是text、data、BSS、STACK、HEAD，用结构体\textbf{vm\_area\_struct}表示，在进程空间中，linux内核采用链表、和红黑树同时管理进程内存，进程用于遍历，红黑树用于特定区域的高性能读写。
+    	\end{itemize}
+    \subsection{物理内存分配相关数据结构与算法}
+    	\begin{itemize}
+    		\item 解决碎片问题的方法(缺页引发的映射物理地址时的算法)\\
+    			\begin{enumerate}
+    				\item 伙伴算法 (Buddy system)\\
+    				针对大块内存的需求。通过用11个链表管理11种不同大小的连续内存块，来满足内存分配的需求。这11种块大小分别为4K、8K、16K、32K...4M,即2的n次方个page组成的块。
+    				\item slab分配器
+    				针对内核中的特定的重复小的数据结构，特别是各种结构体。即在内核需要这个结构体之前，先初始化一个这种类型的结构体池，每当要用时直接分配一个而不是向内存管理重新分配一个远大于该结构体需求的4K大小的页。
+    				\begin{enumerate}
+    					\item \emph{kmem\_cache},一个内核管理的数据结构，包含这三种SLAB链表，\emph{slabs\_full}、\emph{slabs\_partial}、\emph{slabs\_empty}，链表上的slab是一个包含具体结构体的对象缓冲池。
+    					\item 除了上述对于专用结构体有效的专用slab缓存，还有通用的slab缓存，用于分配小块的内存，\emph{kmalloc}和\emph{kfree}函数。
+    				\end{enumerate}
+    			\end{enumerate}
+    		\item 内核物理内存管理的顶层结构体pg\_data\_t;\\
+    		用该类型Linux内核在nobootment.c文件中定义了contig\_page\_data,通过EXPORT\_SYMBOL声明并导出了该符号用于全模块的引用。
+    		\item alloc\_node\_data 节点变量初始化的地方。
+    	\end{itemize}
+   	\subsection{虚拟内存的分配}
+   		\begin{itemize}
+   			\item \emph{malloc}C库函数，用于申请虚拟内存，当申请内存小于128K时，他调用sbrk或brk分配内存；当内存大于128K时调用mmap。
+   		\end{itemize}
+    \subsection{内存初始化}
+    	\begin{itemize}
+    		\item \emph{page\_cgroup\_init\_flatment()}\\
+    			Cgroup：cgroup是control group的简称，cgroup是Linux下的一种将进程按组进行管理的机制，即控制一组进程的资源包括CPU、内存、硬盘等等。这里的初始化暂不深究。
+    		\item \emph{mem\_init()}\\
+    			\begin{enumerate}
+    				\item page\_address\_pool 是一双向循环链表的表头，挂载的表项是page\_address\_map即内存页面映射项
+    			\end{enumerate}
+    		\item \emph{keme\_cache\_init()}
+    		\item \emph{percup\_init\_late()}
+    		\item \emph{pgtable\_Cache\_init()}
+    		\item \emph{vmalloc\_init()}
+    	\end{itemize}
+    \subsection{内存的映射与管理(UMA一致访问)}
+		\begin{itemize}
+			\item 物理页面\\
+			\begin{itemize}
+    		\item PAGE\\
+    		页面管理的结构体包含了2.6.30中就包含了SLUB的元素，其他比较重要的元素有flag 和 \_count。
+    		flags，表示了页面是正常的高端内存页面(及其状态)还是SLUB缓冲页面，根据标志位，结构体中的联合体页有着不同的结构。
+    		\item ZONE\\
+    		之所以要划分ZONE，是因为计算机系统中的内存可能存在不统一的访问方式，因此将相同体系结构的内存区域划分到相同的ZONE中，但是后来ZONE的划分超越了原本意义，变为了单纯逻辑划分出来可能具有某种统一属性的PAGE\quad Freame 的集合（物理页面的池）。\\
+    		\url{https://kernel.0voice.com/forum.php?mod=viewthread&tid=2017&extra=}
+    		\end{itemize}
+    	\item 接口\\
+    	\begin{enumerate}
+    		\item struct page *alloc\_pages\_node(int nid, gfp\_t gfp\_mask,unsigned int order)\\
+    		为了保持多NUMA架构内存兼容，在UMA架构下所有内存都在节点0中，即$nid=0$，该函数的底层函数是\\\_\_alloc\_pages\_nodemask(gfp\_t gfp\_mask,\\ unsigned int order,
+    		struct zonelist *zonelist, nodemask\_t *nodemask)\\函数，这个函数用到了上文所述的Buddy算法。
+    		\item 空闲页是挂载在zone下的freelist上，因此内存初始化时需要将zone和freelist初始化好
+    		\item gfp =>get free page，表示了申请页的属性，具体的标志位含义见include/linux/gfp.h
+    	\end{enumerate}
+    	\item 插曲\_\_attribute\_\_((bitwise))被第三方工具Sparse，静态检查变量类型是否一致赋值。
+    	\end{itemize}
+    \subsection{Kbuild}
+    	\begin{itemize}
+    		\item 顶层makefile 用于总配置环境变量、以及总装vmlinux，并且再子路径core-y等路径中生成built-in.a的静态库集合。
+    		\item Script/Makefile.build 用于子路径下的bult-in.a文件的生成，该文件主要包含了生成中间文件的命令及脚本，（该文件也是在每个子目录下生成文件的主要make文件）。
+    			\begin{enumerate}
+    				\item 注意每个目录下除了Makefile 还有Kbuild文件，当build被调用方时，会加载（obj）路径下的Kbuild，得到该目录下需要编译的其他目录和目标
+    				\item 注意变量kbuild-file该变量搜素了obj目录下的MAKEFILE和KBUILD文件，通过\$(if \$(wildcard))是否存在。
+    				\item subdir-ym 伪目标，用于执行子目录的\$(MAKE) build obj=subdir。
+    			\end{enumerate}
+    		\item Script/Makefile.lib 该文件被Makefile.build 调用用于解析生成子目录、子目录的下的依赖文件。
+    			\begin{enumerate}
+    				\item multi-used-y 变量\\
+    				通过foreach 函数解析obj-y,检查是否存在形如foo-obj 或者foo-y形式的目标变量，存在则修改multi-used-y，否则则保存原值。
+    				\item multi-objs-y:再次生成目标。
+    				
+    			\end{enumerate}
+    		\item Script/Kbuild.include 该文件主要包含了顶层文件、build文件等等Makefile文件所需要的中间变量、函数等。
+    	\end{itemize}
+    \subsection{IOMMU}
+    		IOMMU是设备（虚拟地址）地址到主内存中物理地址的转换，与MMU内存管理单元类似，区别在于IOMMU是设备与主内存之间的媒介、而MMU是CPU（运算单元）与主内存物理地址的媒介。并且由于设备DMA位数一般较少，访问的地址有限，IOMMU的存在解决了DMA只能访问地位地址的缺陷。
+    	\begin{itemize}
+    		\item PCIE-DMA预留内存64M，由slub分配器管理，因为PCIE-DMA最大一次128个字节，也是属于小字节或者说小结构体，具体对应的管理数据结构为 int *io\_tlb\_list。这是一个数组，表示SWIOTLB BUFF从第i个slub开始有连续多少个slab可用，这个值的上限是128，由PCIE-DMA硬件决定。
+    	\end{itemize}

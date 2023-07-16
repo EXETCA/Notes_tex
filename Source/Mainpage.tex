@@ -11,21 +11,23 @@
 %  标题、作者、日期
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \title{经验总结}
-\author{龚涛}
+\author{shadowshurt}
 \date{\today}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  文章设置
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\includeonly{Body/ELF,Body/debug,Body/FREERTOS,Body/LinuxKernel}
-\bibliographystyle{plain}  %引用风格设置
+\includeonly{Body/ELF,Body/debug,Body/FREERTOS,Body/LinuxKernel,Body/Makefile,Body/Bash}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  包管理
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{cite}
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{textcomp}
+\usepackage{hyperref}
 \lstset{
     breaklines,                                 % 自动换行
     basicstyle          =   \sffamily,          % 基本代码风格
@@ -62,5 +64,8 @@
 \include{Body/debug}
 \include{Body/FREERTOS}
 \include{Body/LinuxKernel}
+\include{Body/Makefile}
+\include{Body/Bash}
+\bibliographystyle{plain}  %引用风格设置
 \bibliography{cite/cite.bib}
 \end{document}

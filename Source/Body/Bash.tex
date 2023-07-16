@@ -1,0 +1,112 @@
+\section{bash}
+  \subsection{简介}
+  \begin{itemize}
+  	\item Unix shell is both ad command interpreter and a porgramming langguage.
+  	\item 模式：交互模式与非交互模式。所谓非交互模式即shell从文件中读取命令并执行。
+  	\item 内生的指令。
+  		\begin{enumerate}
+  			\item \textbf{cd} 
+  			\item \textbf{break}
+  			\item \textbf{continue}
+  			\item \textbf{exec}
+  		\end{enumerate}
+  			.....
+  	\item 语言基础：变量、控制流构建、引号、函数。
+  	\item 特性：工作流控制、命令记录、别名。
+  \end{itemize}
+\subsection{语法环境}
+	\begin{itemize}
+		\item 注释符 \# 将剩下的一行注释
+		\item Quoting 删除符号的特殊意义，有三种方法双引号、单引号、转义符
+			\begin{enumerate}
+				\item \textbackslash \quad 除了 \textbackslash newline 其他情况下满足上述
+				\item '\quad 单引号 保持单引号内的（单）字符属性，即非特殊意义
+				\item "\quad 双引号 保持（所有）字符属性,除了，\$ ' \textbackslash ！这几个符号，当历史扩展使能时。 当Shell运行POSIX模式！，在并不能有特殊意义，即使开启历史扩展。\textbackslash 只有后面跟随 \$ ' " \textbackslash newline 时才具有特殊意义。在双引号中@ * 有特殊意义。
+			\end{enumerate}
+		\item  标准C的引用\\
+		形式如同 \$'string',string 中有包含转义符的字符例如\textbackslash a 、\textbackslash b ....
+		\item  本地特殊转换\\
+		形式如同 \$"strings" ，根据本地环境不同将会对其作出不同处理。例如本地时C或POSIX环境，那么将会忽略\$符号并不进行转义。如果使用\textbf{shopt}的--noexpand\_translation 则转移字符双引号被单引号代替。通过bash --dump-po-strings scriptname > domain.pot 可以将显示脚本中转移后的文字效果。
+		\item 注释\\
+		除了\#是注释符外，在bash中可以通过textbf{shopt}的interactive\_comments 开启注释或关闭注释。
+		\item 命令
+			\begin{enumerate}
+				\item 关键字\\
+				\textbf{if} \textbf{then} \textbf{elif} \textbf{else} \textbf{fi} \textbf{time} \\
+				\textbf{for} \textbf{in} \textbf{unitl} \textbf{while} \textbf{do} \textbf{done}\\
+				\textbf{case} \textbf{esac} \textbf{coproc} \textbf{select} \textbf{function}\\
+				\textbf {\{}  \qquad\textbf {\}} \qquad [[\quad]] \qquad !
+				\item 管道\\
+				| or |\& 符号 格式如下：
+\begin{lstlisting}[numbers = none]
+[time [-p]] [!] command1 [ | or |& command2 ] ...
+\end{lstlisting}
+				|\&是标准错误，即将标准错误加到他的标准输出中区，然后输出给下一个命令。time 关键字是用来输出时间的-p选项是用POSIX格式...
+				\item 命令列表\\
+				命令之间可以用|| 或\&\&或;或\&或者newline连接，这些连接符的优先即不同，; \&优先级最高、|| 和 \&\&优先级相等并低于前者。\&连接的命令将会匿名地异步的在后台执行。Shell并不会等待其完成。分号连接的命令按顺序执行。|| 连接的命令，命令2 仅当命令1执行且返回非0状态。\&\&连接的命令执行当且仅当命令1完成并返回0状态。
+				\item 混合命令\\
+				这是shell编程语言的构建，可以通过关键字来构建执行流。
+				\begin{enumerate}
+					\item 循环结构\\
+					\begin{enumerate}
+						\item uintil
+\begin{lstlisting}[numbers = none]
+	until test-commands; do consequent-commands; done
+\end{lstlisting}
+					当条件命令返回非0执行。
+						\item while
+\begin{lstlisting}[numbers = none]
+	while test-commands; do consequent-commands; done
+\end{lstlisting}	当条件命令返回0执行。					
+						\item for
+\begin{lstlisting}[numbers = none]
+	for name [ [in [words ...] ] ; ] do commands; done 
+\end{lstlisting}
+				当name 值在括号中的列表中时，执行。
+\begin{lstlisting}[numbers = none]
+	for (( expr1 ; expr2 ; expr3 )) ; do commands ; done
+\end{lstlisting}
+				当expr2表达式不为0时执行（每执行一次检查）。
+					\end{enumerate}
+					\item 条件语句
+					\begin{enumerate}
+						\item if语句
+\begin{lstlisting}[numbers = none]
+	if test-commands; then
+	consequent-commands;
+	[elif more-test-commands; then
+	more-consequents;]
+	[else alternate-consequents;]
+	fi
+\end{lstlisting}
+					条件命令返回0时执行。
+					\item case 语句
+\begin{lstlisting}[numbers = none]
+	case word in
+	[ [(] pattern [| pattern]...) command-list ;;]...
+	esac
+\end{lstlisting}
+					匹配条件和执行命令通过）分割
+					\item selects			
+\begin{lstlisting}[numbers = none]
+	select name [in words ...]; do commands; done
+\end{lstlisting}		
+					\item ((expression))
+					\item (expression)
+					\item ! expression
+					\item expression1 \&\& expression2
+					\item expression1 ||  expression2			
+					\end{enumerate}
+					\item 语句组
+					\begin{enumerate}
+						\item (list)
+						\item (list;)
+					\end{enumerate}
+					\item 协处理
+\begin{lstlisting}[numbers = none]
+	coproc [NAME] command [redirections]
+\end{lstlisting}	
+				\end{enumerate}
+			\end{enumerate}
+			\item 函数
+	\end{itemize}

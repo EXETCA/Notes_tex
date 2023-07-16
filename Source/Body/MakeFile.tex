@@ -1,0 +1,326 @@
+\section{MakeFile笔记}
+  \subsection{语法与环境}
+  \begin{itemize}
+  	\item 变量\emph{VPATH}\
+  		提供目标文件的搜素路径，但是脚本运行的路径不由该变量指定。\\
+  		具体语法:
+\begin{lstlisting}
+VPATH = ...
+\end{lstlisting}
+	\item \emph{path}\\
+	匹配模式下的目标搜索路径。\\
+	具体语法：
+\begin{lstlisting}
+vpath pattern directory-list
+\end{lstlisting}
+	实例：
+\begin{lstlisting}
+vpath %.c src
+vpath %.h include
+\end{lstlisting}
+	\item 通配符\\
+		与Bourne Shell保持一致
+		\begin{enumerate}
+			\item \textasciitilde 表示当前用户的home路径
+			\item * 代替0、单个、多个字符
+			\item ? 代替一个字符
+			\item \,\![ ... ]\:表示匹配方括号里的字符\\
+				例如 [12345],表示只能匹配1、2、3、4、5中的任意一个字符
+			\item {[\textasciicircum...]表示不匹配方括号里的字符}
+%			\item \% 为Makefile规则通配符,等效于*,可以出现在规则匹配中的任何地方，但是只能出现一次
+		\end{enumerate}
+	\item 自动变量\\
+		\begin{enumerate}
+			\item \$@
+			目标文件的文件名
+			\item \$\%
+			目标时数据库时，表示其中的成员的文件名
+			\item \$<
+			第一个依赖文件的文件名
+			\item \$?
+			表示比（所有）目标更新的依赖文件文件名
+			\item \$\^
+			表示所有依赖的文件名，这些文件名被空格隔开(不包括重复的)
+			\item \$+
+			表示所有依赖的文件名，这些文件名被空格隔开(包括重复的)
+			\item \$*
+			匹配模式中的，主文件名\%（不包括.c等后缀）
+		\end{enumerate}
+		\item 静态匹配\
+		在特定的文件列表中匹配:
+\begin{lstlisting}
+$(OBJECTS):%.o:%.c
+	$(CC) -C $(CFLAGS) $< -o $@
+\end{lstlisting}
+		\item 反直觉的后缀匹配模式\\
+		由连续的两个后缀构成，其依赖在目标的前面,示例：
+\begin{lstlisting}
+.c.o:
+	$(COMPILE.c) $(OUTPUT_OPTION) $< 
+\end{lstlisting}
+		\item 单后缀匹配\\
+		一般用于生成可执行文件，unix系统中可执行文件一般不带后缀。
+		\item 可用于匹配模式的常见后缀，由系统变量\$(.SUFFIXES)定义\\
+		.SUFFIXES : .out .a .ln .o .c .cc .C .cpp .p .f .F .r .y .l \\
+		通过重定义该变量可实现修改匹配后缀
+		\item GNU Make 默认参数（潜规则）\\
+		GNU Make 自带了很多匹配模式的规则，因此可以直接执行，或者仅仅对其中一些变量进行定义后就可执行，
+		具体的规则可以使用下列命令查看
+\begin{lstlisting}
+make --print-data-base(-p)
+\end{lstlisting}
+		\item 环境变量作为参数传给make，注意环境变量等号之间不能由空格
+\begin{lstlisting}
+	make $(OBJECT) ENVERIONMENT=VALUE
+\end{lstlisting}
+		\item makefile的文件名必须时全小写或者Makefile才能被make软件默认识别。
+		\item makefile里的目标文件必须加：才能被识别为目标，才能被默认执行。
+		\item 特殊目标\\
+			\begin{enumerate}
+				\item .INTERMEDATE \\
+				该目标文件的依赖会被当作中间文件，原来不存在，最后在make退出时删除，原来存在则不会删除。
+				\item .SECONDARY \\
+				依赖文件不会被删除。
+				\item .PRECIOUS
+				若执行被中断，则会删除其更新的目标文件。
+				\item .DELETE\_ON\_ORROR\\
+				若执行出错，只删除这个目标。
+				\item .EXPORT\_ALL\_VARIABLES
+			\end{enumerate}
+		\item 自动依赖解析\\
+		特别是针对标准库头文件的解析。利用GCC等编译器自带的头文件解析工具就可以解析除该头文件需求。\\
+\cite[page.37]{MecklenburgNovember2004}
+\begin{lstlisting}
+$ echo "#include <stdio.h>" > stdio.c
+$ gcc -M stdio.c
+	stdio.o: stdio.c /usr/include/stdio.h /usr/include/_ansi.h \
+	/usr/include/newlib.h /usr/include/sys/config.h \
+	/usr/include/machine/ieeefp.h /usr/include/cygwin/config.h \
+	/usr/lib/gcc-lib/i686-pc-cygwin/3.2/include/stddef.h \
+	/usr/lib/gcc-lib/i686-pc-cygwin/3.2/include/stdarg.h \
+	/usr/include/sys/reent.h /usr/include/sys/_types.h \
+	/usr/include/sys/types.h /usr/include/machine/types.h \
+	/usr/include/sys/features.h /usr/include/cygwin/types.h \
+	/usr/include/sys/sysmacros.h /usr/include/stdint.h \
+	/usr/include/sys/stdio.h
+\end{lstlisting}
+	如何将该解析结果加入Makefile？\\
+\cite[page.39]{MecklenburgNovember2004} 
+\begin{lstlisting}
+depend: *.c *.c
+	$(CC) -M $(CPPFLAGS) $^ > $@
+include depend
+\end{lstlisting}
+	即将输出保存成文件、在包含这个文件的方式。
+\begin{lstlisting}
+sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@;
+\end{lstlisting}
+	其中s表示字符串替换模式\\
+	\textbackslash (\$*\textbackslash)\textbackslash.o[ :]*首先make会替换\$,然后剩下的为正则表达式匹配内容,
+	替换成\textbackslash 1.o \$@ : 这里\textbackslash1 会匹配前面的\textbackslash (\$*\textbackslash),make会将\$@换成目标文件文件名,最后一个参数g表示整行匹配替换，若没有这个g，则一行中出现多次匹配内容时，他仅仅匹配一次
+	\item 静态库操作\\
+		\begin{enumerate}
+			\item ar 指令\\
+			ar rv lib.a object.o 将object.o 打包到lib,a中
+			\item 链接静态库\\
+			cc object.o lib1.a lib2.a -o object 即链接objet\\
+			cc object.o -l1 -l2 -o object 简写形式并且注意链接库的lib前缀去掉了并增加了-l\\
+			cc object.o -L.  -l1 -l2 -o object 使用-L修改搜素路径、
+			\item 利用make简化工作\\
+			\cite[page.43]{MecklenburgNovember2004} 
+\begin{lstlisting}
+libgraphics.a(bitblt.o): bitblt.o
+	$(AR) $(ARFLAGS) $@ $<
+\end{lstlisting}			
+		\end{enumerate}
+	\item 双冒号规则\\
+	即同一个目标文件更具不同依赖对象更新执行不同的指令
+\begin{lstlisting}
+file-list:: generate-list-script
+	chmod +x $<
+	generate-list-script $(files) > file-list
+file-list:: $(files)
+	generate-list-script $(files) > file-list
+\end{lstlisting}
+ \end{itemize}
+  \subsection{变量与宏定义} 、
+	\begin{itemize}
+		\item 变量的命名规则\\
+		绝大部分字符都支持，只有：，\#，=这三个符号不支持，大小写敏感，要获取变量的值必须用\$()包围他，如果时单字符可以省略括号，这就是为什么自动变量不用带括号的原因。
+		\item 变量的定义\\
+		注意变量末尾的空格不会自动忽略，因此要注意，当变量未定定义被使用，则变量会拓展为空格而不是报错\\
+		类型: 简单拓展类型用：=定义；递归类型用=定义，即变量可以不安顺序定义，并且每次使用递归变量时，变量会实时变动；条件变量，用？=定义，当变量未被定义，再定义；递增定义+=，增加变量的字符，=定义的变量无法自增不然会陷入循环，因此增加了该符号。
+		\item 宏定义\\
+		可以说宏定义就是多行的变量，因为宏定义和变量展开方式都是字符串展开。宏定义以define开头以endef结尾，注意必须换行。
+\begin{lstlisting}
+define MACROS＿NAME
+	BODY...
+	...
+	...
+endef
+\end{lstlisting}
+		使用宏定义时在前面增加@，可以使得每一行都固定增加@，用来显示执行命令。
+	 \item 变量的扩展规则\\
+	 	make工作时会执行两轮，第一轮扫描makefile并执行include、保存变量、依赖关系到数据库中，第二轮make将会分析依赖并决定更新。当宏定义扩展时，被扩展的文字也会被立刻被递归扩展或者引用变量，如果宏定义在命令中扩展则会自动增加制表符。
+	 	\begin{enumerate}
+	 		\item 对于变量赋值语句的左边变量，第一遍执行make时，make将总是立刻赋值。（因此左边如果存在表达式，必须由前置的赋值语句,否则使用上述的空规则，即给空赋值）
+	 		\item =或？=的右边，将在第二遍执行时赋值。因此右侧的表达式如果含有变量，则以最终的赋值语句为准。
+	 		\item :=的右边将会立刻扩展。因此右边的表达式上面一定要定义一次。
+	 		\item += 如果左时简单的立即变量（由：=定义）将会立刻扩展，否则将会被延迟。
+	 		\item 宏定义名字将会被立刻展开，但是定义内容将会延迟。
+	 		\item 目标和依赖将会立刻展开，但是命令会被延迟。
+	 	\end{enumerate}
+	 	\item 仅对某目标文件有效的变量定义\\
+\begin{lstlisting}[numbers = none]
+target...: variable = value
+target...: variable := value
+target...: variable += value
+target...: variable ?= value
+\end{lstlisting}	 	
+		\item 变量传递\\
+		环境变量传递到make，一般而言makefile里的变量会将环境变量覆盖、但是通过--enviroment-overrides(or -e)选项可以使得环境变量覆盖makefile的变量。\\
+		当make递归调用时，变量可以通过环境变量传递给子make。通过export 标记可以将makefile中的变量传递到环境变量。通过unexport 标记阻止这种传递。
+	\end{itemize}
+\subsection{条件语句}
+\begin{itemize}
+	\item 语法\\
+\begin{lstlisting}
+if-condition
+text if the condition is true
+else
+text if the condition is false
+endif
+\end{lstlisting}	
+	\item  	if-condition\\
+	\begin{enumerate}
+		\item ifdef variable-name
+		\item ifndef variable-name
+		\item ifeq test
+		\item ifneq test
+	\end{enumerate}
+	variable-name不需要用\$()，test 可以是"a" "b" 或者 (a,b)
+\end{itemize}
+\subsection{包含include}
+\begin{itemize}
+	\item include filename1 ... (or wildcards)
+	注意make，第一遍找不到include时，make会跳过执行，当全部依赖建立完后，make会尝试匹配include文件和依赖，若include文件更新，make将会重新启动make再次执行。再次执行还是没有inlcude，那么make就会出错。
+\end{itemize}
+\subsection{标准变量}
+\begin{enumerate}
+	\item MAKE\_VERSION\\
+	显然是make的版本
+	\item CURDIR\\ 
+	当前工作目录。但是当make启用-directory=directory-nameor-Cdirectory-name选项
+	\item MAKEFILE\_LIST\\
+	加载的makefile的文件名
+	\item MAKECMDGOALS\\
+	make的目标，特别是从命令行加载的目标
+	\item .VARIBLES\\
+	包含了到引用变量之前的在makefile中定义的变量
+\end{enumerate}
+\subsection{函数}
+	\begin{itemize}
+		\item 用户定义函数\\
+		带参数的宏定义、宏名可以使参数也可以是变量（宏就是一个多行的变量）
+\begin{lstlisting}[numbers = none]
+$(callmacro-name[,param1...])
+\end{lstlisting}	 	
+		参数1，不能是带\$符号的变量，因为make将会将其值传递。如果宏没有引用参数，而你使用call传递了参数，这并不会发生什么。如果宏定义中嵌套调用了宏，那么子宏的引用的参数会被显示到父中
+		\item make 内置的函数\\
+		\begin{enumerate}
+			\item filter
+\begin{lstlisting}[numbers = none]
+	$(filterpattern...,text)
+\end{lstlisting}				
+			从TEXT中过滤除符合pattern的字符，注意pattern中只能有一个\%，若2则第一个会被视为字符\%。\\
+			衍生：filter-out 取不符合的字符 
+			\item findstring
+\begin{lstlisting}[numbers = none]
+	$(findstring string,text)
+\end{lstlisting}
+			找到则返回，找不到则返回空。但是string中不能包含通配符
+			\item subst 
+\begin{lstlisting}[numbers = none]
+	$(substsearch-string,replace-string,text)
+\end{lstlisting}			
+			简单的非通配搜素、替换。
+			\item patsubst 
+\begin{lstlisting}[numbers = none]
+	$(patsubst search-pattern,replace-pattern,text)
+\end{lstlisting}
+			单\%匹配。
+			简写形式
+\begin{lstlisting}[numbers = none]
+	$(variable:search=replace)
+\end{lstlisting}
+			\item words 
+\begin{lstlisting}[numbers = none]
+	$(words text)
+\end{lstlisting}
+			返回text中的词的个数。
+\begin{lstlisting}[numbers = none]
+	$(word n,text)
+\end{lstlisting}
+			返回text中第N个词
+\begin{lstlisting}[numbers = none]
+	$(firstword text)
+\end{lstlisting}
+			返回第一个词
+\begin{lstlisting}[numbers = none]
+	$(wordlist start,end,text)
+\end{lstlisting}			
+			返回第n-m个词
+			\item sort
+\begin{lstlisting}[numbers = none]
+	$(sort list)
+\end{lstlisting}	
+			将字符按顺序排列
+			\item shell
+\begin{lstlisting}[numbers = none]
+	$(shell command)
+\end{lstlisting}	
+			将命令放到子shell中运行，并返回结果
+			\item wildcard 文件通配指令
+\begin{lstlisting}[numbers = none]
+	$(wildcard pattern...)
+\end{lstlisting}			
+			注意该函数用于搜素文件,与\$(if)联动可以判断文件是否存在
+			\item dir 
+\begin{lstlisting}[numbers = none]
+	$(dir list...)
+\end{lstlisting}		
+			返回列表中的所有目录	
+			\item notdir
+\begin{lstlisting}[numbers = none]
+	$(nodir name...)
+\end{lstlisting}			
+			返回文件路径中的文件名部分
+			\item suffix
+\begin{lstlisting}[numbers = none]
+	$(suffix name...)
+\end{lstlisting}			
+			返回各个词的前缀	
+			\item strip
+\begin{lstlisting}[numbers = none]
+	$(strip text)
+\end{lstlisting}
+			用于删除text中的开头和尾巴处的空格字符，并将内部空白（多个空格）合并为一个空格。
+		\end{enumerate}
+		\item 流控制函数
+			\begin{enumerate}
+				\item if 
+\begin{lstlisting}[numbers = none]
+	$(if condition,then-part,else-part)
+\end{lstlisting}
+				\item error 
+\begin{lstlisting}[numbers = none]
+	$(error text)
+\end{lstlisting}
+				\item foreach
+\begin{lstlisting}[numbers = none]
+	$(foreach variable,list,body)
+\end{lstlisting}
+			执行用list的元素替换varibale 然后展开成body，直到list中的元素被替换完位置。
+				
+			\end{enumerate}
+	\end{itemize}
